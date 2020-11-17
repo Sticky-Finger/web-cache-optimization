@@ -34,36 +34,40 @@ let server = http.createServer(function(request, response) {
         return;
       }
 
-      // console.log('realPath', realPath);
-      // console.log('stat', stat);
       const lastModified = stat.mtime.toUTCString();
       response.setHeader('Last-Modified', lastModified);
-
-      fs.exists(realPath, function (exists) {
-        if (!exists) {
-          response.writeHead(404, {
-            'Content-Type': 'text/plain',
-          });
-  
-          response.write('This request URL ' + pathname + ' was not found on this server');
-          response.end();
-        } else {
-          fs.readFile(realPath, 'binary', function (err, file) {
-            if (err) {
-              response.writeHead(500, {
-                'Content-Type': 'text/plain',
-              });
-              response.end();
-            } else {
-              response.writeHead(200, {
-                'Content-Type': contentType,
-              });
-              response.write(file, 'binary');
-              response.end();
-            }
-          });
-        }
-      });
+      
+      // 配置last-modified的304响应
+      if (request.headers['if-modified-since'] && lastModified == request.headers['if-modified-since']) {
+        response.writeHead(304, 'Not Modified');
+        response.end();
+      } else {
+        fs.exists(realPath, function (exists) {
+          if (!exists) {
+            response.writeHead(404, {
+              'Content-Type': 'text/plain',
+            });
+    
+            response.write('This request URL ' + pathname + ' was not found on this server');
+            response.end();
+          } else {
+            fs.readFile(realPath, 'binary', function (err, file) {
+              if (err) {
+                response.writeHead(500, {
+                  'Content-Type': 'text/plain',
+                });
+                response.end();
+              } else {
+                response.writeHead(200, {
+                  'Content-Type': contentType,
+                });
+                response.write(file, 'binary');
+                response.end();
+              }
+            });
+          }
+        });
+      }
     });
 
     
