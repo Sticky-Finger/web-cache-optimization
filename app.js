@@ -5,6 +5,7 @@ const PORT = 8080;
 const fs = require('fs');
 const path = require('path');
 const mime = require('./mime').types;
+const config = require('./config');
 
 let server = http.createServer(function(request, response) {
     const pathname = url.parse(request.url).pathname;
@@ -12,6 +13,13 @@ let server = http.createServer(function(request, response) {
     let ext = path.extname(realPath);
     ext = ext ? ext.slice(1) : 'unknown';
     const contentType = mime[ext] || 'text/plain';
+
+    if (ext.match(config.Expires.fileMatch)) {
+      const expires = new Date();
+      expires.setTime(expires.getTime() + config.Expires.maxAge * 1000);
+      response.setHeader('Expires', expires.toUTCString());
+      response.setHeader('Cache-Control', 'max-age=' + config.Expires.maxAge);
+    }
 
     fs.exists(realPath, function (exists) {
       if (!exists) {
