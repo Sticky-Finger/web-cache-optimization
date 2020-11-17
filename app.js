@@ -3,10 +3,16 @@ const http = require('http');
 const url = require('url');
 const PORT = 8080;
 const fs = require('fs');
+const path = require('path');
+const mime = require('./mime').types;
 
 let server = http.createServer(function(request, response) {
     const pathname = url.parse(request.url).pathname;
     const realPath = 'assets' + pathname;
+    let ext = path.extname(realPath);
+    ext = ext ? ext.slice(1) : 'unknown';
+    const contentType = mime[ext] || 'text/plain';
+
     fs.exists(realPath, function (exists) {
       if (!exists) {
         response.writeHead(404, {
@@ -24,7 +30,7 @@ let server = http.createServer(function(request, response) {
             response.end();
           } else {
             response.writeHead(200, {
-              'Content-Type': 'text/plain',
+              'Content-Type': contentType,
             });
             response.write(file, 'binary');
             response.end();
